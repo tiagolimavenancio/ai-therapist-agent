@@ -4,6 +4,7 @@ import { serve } from "inngest/express";
 import { inngest } from "./inngest/index";
 import { functions as inngestFunctions } from "./inngest/functions";
 import { logger } from "./utils/logger";
+import { connectDB } from "./utils/db";
 
 const app = express();
 
@@ -23,6 +24,10 @@ app.get("/api/chat", (req: Request, res: Response) => {
 
 const startServer = async () => {
   try {
+    // Connect to Mongo DB first
+    await connectDB();
+
+    // The start the server
     const PORT = process.env.PORT || 3001;
 
     app.listen(PORT, () => {
