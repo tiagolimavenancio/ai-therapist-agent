@@ -1,0 +1,2 @@
+{"level":"info","message":"Server is running on port 3001","timestamp":"2025-08-14T15:28:35.912Z"}
+{"level":"info","message":"Inngest endpoint available at http://locahost:3001/api/inngest","timestamp":"2025-08-14T15:28:35.916Z"}
