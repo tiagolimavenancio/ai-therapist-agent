@@ -6,11 +6,14 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { serve } from "inngest/express";
 import { errorHandler } from "./middlewares/errorHandler";
-import { inngest } from "./inngest/index";
+import { inngest } from "./inngest/client";
 import { functions as inngestFunctions } from "./inngest/functions";
 import { logger } from "./utils/logger";
 import { connectDB } from "./utils/db";
-import authRoutes from "./routes/auth";
+import authRouter from "./routes/auth";
+import chatRouter from "./routes/chat";
+import moodRouter from "./routes/mood";
+import activityRouter from "./routes/activity";
 
 dotenv.config();
 
@@ -36,7 +39,10 @@ app.get("/api/chat", (req: Request, res: Response) => {
 });
 
 // routes
-app.use("/auth", authRoutes);
+app.use("/auth", authRouter);
+app.use("/chat", chatRouter);
+app.use("/api/mood", moodRouter);
+app.use("/api/activity", activityRouter);
 
 // error handling
 app.use(errorHandler);
