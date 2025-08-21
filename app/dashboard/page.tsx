@@ -1,4 +1,6 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Container } from "@/components/ui/container";
@@ -7,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Activity,
   ArrowRight,
+  Bell,
   Brain,
   BrainCircuit,
   Heart,
@@ -28,10 +31,14 @@ import { AnxietyGames } from "@/components/games/anxiety-games";
 import { MoodForm } from "@/components/mood/mood-form";
 import { ActivityLogger } from "@/components/activities/activity-logger";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/contexts/session-context";
 
 export default function DashboardPage() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [mounted, setMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const router = useRouter();
+  const { user } = useSession();
+
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [isSavingMood, setIsSavingMood] = useState(false);
   const [showActivityLogger, setShowActivityLogger] = useState(false);
@@ -42,7 +49,6 @@ export default function DashboardPage() {
     mindfulnessCount: 0,
     totalActivities: 0,
   });
-  const router = useRouter();
 
   // Define wellness stats
   const wellnessStats = [
@@ -116,7 +122,9 @@ export default function DashboardPage() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-2"
           >
-            <h1 className="text-3xl font-bold text-foreground">Welcome back, there</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Welcome back, {user?.name || "there"}
+            </h1>
             <p className="text-muted-foreground">
               {currentTime.toLocaleDateString("en-US", {
                 weekday: "long",
@@ -125,13 +133,17 @@ export default function DashboardPage() {
               })}
             </p>
           </motion.div>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon">
+              <Bell className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Main Grid Layout */}
         <div className="space-y-6">
           {/* Top Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Quick Actions Card */}
             {/* Quick Actions Card */}
             <Card className="border-primary/10 relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-transparent" />
@@ -266,7 +278,7 @@ export default function DashboardPage() {
               <DialogDescription>Move the slider to track your current mood</DialogDescription>
             </DialogHeader>
             {/** Mood Form */}
-            <MoodForm onSubmit={handleMoodSubmit} isLoading={isSavingMood} />
+            <MoodForm onSuccess={() => setShowMoodModal(false)} />
           </DialogContent>
         </Dialog>
       </Container>

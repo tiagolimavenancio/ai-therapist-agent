@@ -6,8 +6,10 @@ import { Heart, Menu, X, MessageCircle, AudioWaveform, LogOut, LogIn } from "luc
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/contexts/session-context";
 
 function Header() {
+  const { isAuthenticated, user, logout } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
@@ -29,7 +31,9 @@ function Header() {
               <span className="font-semibold text-lg bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                 Aura3.0
               </span>
-              <span className="text-xs dark:text-muted-foreground">Your mental Companion</span>
+              <span className="text-xs dark:text-muted-foreground">
+                Your mental health Companion{" "}
+              </span>
             </div>
           </Link>
 
@@ -50,7 +54,27 @@ function Header() {
 
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <SignInButton />
+
+              {isAuthenticated ? (
+                <>
+                  <Button asChild className="hidden md:flex gap-2 bg-primary/90 hover:bg-primary">
+                    <Link href="/dashboard">
+                      <MessageCircle className="w-4 h-4 mr-1" />
+                      Start Chat
+                    </Link>
+                  </Button>
+                  <Button
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    variant="outline"
+                    onClick={logout}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <SignInButton />
+              )}
 
               <Button
                 variant="ghost"

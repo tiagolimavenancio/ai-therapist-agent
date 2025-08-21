@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { useSession } from "@/lib/contexts/session-context";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 interface MoodFormProps {
   onSuccess?: () => void;
@@ -12,6 +15,7 @@ interface MoodFormProps {
 export function MoodForm({ onSuccess }: MoodFormProps) {
   const [moodScore, setMoodScore] = useState(50);
   const [isLoading, setIsLoading] = useState(false);
+  const { user, isAuthenticated, loading } = useSession();
   const router = useRouter();
 
   const emotions = [
@@ -24,7 +28,53 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
 
   const currentEmotion = emotions.find((em) => Math.abs(moodScore - em.value) < 15) || emotions[2];
 
-  const handleSubmit = async () => {};
+  const handleSubmit = async () => {
+    console.log("MoodForm: Starting submission");
+    console.log("MoodForm: Auth state:", { isAuthenticated, loading, user });
+
+    if (!isAuthenticated) {
+      console.log("MoodForm: User not authenticated");
+      alert("Authentication required");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+      console.log("MoodForm: Token from localStorage:", token ? "exists" : "not found");
+
+      const response = await fetch("/api/mood", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ score: moodScore }),
+      });
+
+      console.log("MoodForm: Response status:", response.status);
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("MoodForm: Error response:", error);
+        throw new Error(error.error || "Failed to track mood");
+      }
+
+      const data = await response.json();
+      console.log("MoodForm: Success response:", data);
+
+      alert("Mood tracked successfully!");
+
+      // Call onSuccess to close the modal
+      onSuccess?.();
+    } catch (error: any) {
+      console.error("MoodForm: Error:", error);
+      alert(error.message || "Failed to track mood");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6 py-4">
@@ -61,8 +111,17 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
       </div>
 
       {/* Submit button */}
-      <Button className="w-full" onClick={handleSubmit} disabled={isLoading}>
-        Save Mood
+      <Button className="w-full" onClick={handleSubmit} disabled={isLoading || loading}>
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Saving...
+          </>
+        ) : loading ? (
+          "Loading..."
+        ) : (
+          "Save Mood"
+        )}
       </Button>
     </div>
   );
