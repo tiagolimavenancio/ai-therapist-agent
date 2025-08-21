@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface User {
@@ -47,10 +47,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         console.log("SessionContext: User data received:", data);
-
         const userData = data.user;
         const { password, ...safeUserData } = userData;
-
         setUser(safeUserData);
         console.log("SessionContext: User state updated:", safeUserData);
       } else {
@@ -94,7 +92,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionContext.Provider
-      value={{ loading, user, isAuthenticated: !!user, logout, checkSession }}
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user,
+        logout,
+        checkSession,
+      }}
     >
       {children}
     </SessionContext.Provider>
@@ -103,8 +107,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
 export function useSession() {
   const context = useContext(SessionContext);
-  if (!context) {
-    throw new Error("useSession must be used with a SessionProvider");
+  if (context === undefined) {
+    throw new Error("useSession must be used within a SessionProvider");
   }
   return context;
 }

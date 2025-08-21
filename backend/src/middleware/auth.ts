@@ -1,10 +1,12 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { User } from "../models/User";
 
-// Extend Express Request type include user
+// Load environment variables
+dotenv.config();
+
+// Extend Express Request type to include user
 declare global {
   namespace Express {
     interface Request {

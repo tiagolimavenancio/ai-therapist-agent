@@ -1,25 +1,26 @@
 import { Request, Response } from "express";
-import { Types } from "mongoose";
-import { v4 as uuidv4 } from "uuid";
-import { GoogleGenAI } from "@google/genai";
-import { User } from "../models/User";
 import { ChatSession, IChatSession } from "../models/ChatSession";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { v4 as uuidv4 } from "uuid";
+import { Types } from "mongoose";
+import dotenv from "dotenv";
 import { logger } from "../utils/logger";
-import { InngestEvent } from "../types/inngest";
 import { inngest } from "../inngest/client";
+import { User } from "../models/User";
+import { InngestSessionResponse, InngestEvent } from "../types/inngest";
+
+// Load environment variables
+dotenv.config();
 
 // Initialize Gemini API
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+// Create a new chat session
 export const createChatSession = async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
     if (!req.user || !req.user.id) {
-      return res.status(401).json({
-        message: "Unauthorized - User not authenticated",
-      });
+      return res.status(401).json({ message: "Unauthorized - User not authenticated" });
     }
 
     const userId = new Types.ObjectId(req.user.id);
@@ -29,8 +30,9 @@ export const createChatSession = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate a unique session id
+    // Generate a unique sessionId
     const sessionId = uuidv4();
+
     const session = new ChatSession({
       sessionId,
       userId,
@@ -61,22 +63,21 @@ export const sendMessage = async (req: Request, res: Response) => {
     const { message } = req.body;
     const userId = new Types.ObjectId(req.user.id);
 
-    logger.info("Processing message: ", { sessionId, message });
+    logger.info("Processing message:", { sessionId, message });
 
     // Find session by sessionId
-    const session = await ChatSession.findOne({ sessionId, userId });
-
+    const session = await ChatSession.findOne({ sessionId });
     if (!session) {
-      logger.warn("Session not found: ", { sessionId });
+      logger.warn("Session not found:", { sessionId });
       return res.status(404).json({ message: "Session not found" });
     }
 
     if (session.userId.toString() !== userId.toString()) {
-      logger.warn("Unauthorized access attempt: ", { sessionId, userId });
+      logger.warn("Unauthorized access attempt:", { sessionId, userId });
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Create inngest event for message processing
+    // Create Inngest event for message processing
     const event: InngestEvent = {
       name: "therapy/session.message",
       data: {
@@ -103,12 +104,15 @@ export const sendMessage = async (req: Request, res: Response) => {
       },
     };
 
-    logger.info("Sending message to Inngest: ", { event });
+    logger.info("Sending message to Inngest:", { event });
 
     // Send event to Inngest for logging and analytics
     await inngest.send(event);
 
-    // Analyze the Message
+    // Process the message directly using Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    // Analyze the message
     const analysisPrompt = `Analyze this therapy message and provide insights. Return ONLY a valid JSON object with no markdown formatting or additional text.
     Message: ${message}
     Context: ${JSON.stringify({
@@ -125,15 +129,12 @@ export const sendMessage = async (req: Request, res: Response) => {
       "progressIndicators": ["string"]
     }`;
 
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: analysisPrompt,
-    });
+    const analysisResult = await model.generateContent(analysisPrompt);
+    const analysisText = analysisResult.response.text().trim();
+    const cleanAnalysisText = analysisText.replace(/```json\n|\n```/g, "").trim();
+    const analysis = JSON.parse(cleanAnalysisText);
 
-    const analysis_res = response.text;
-    const analysis = JSON.parse(analysis_res || "{}");
-
-    logger.info("Message analysis: ", analysis);
+    logger.info("Message analysis:", analysis);
 
     // Generate therapeutic response
     const responsePrompt = `${event.data.systemPrompt}
@@ -151,13 +152,10 @@ export const sendMessage = async (req: Request, res: Response) => {
     4. Maintains professional boundaries
     5. Considers safety and well-being`;
 
-    const responseResult = await genAI.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: responsePrompt,
-    });
+    const responseResult = await model.generateContent(responsePrompt);
+    const response = responseResult.response.text().trim();
 
-    const response_ = responseResult.text;
-    logger.info("Generated response: ", response_);
+    logger.info("Generated response:", response);
 
     // Add message to session history
     session.messages.push({
@@ -168,7 +166,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     session.messages.push({
       role: "assistant",
-      content: response_ || "No response generated",
+      content: response,
       timestamp: new Date(),
       metadata: {
         analysis,
@@ -181,7 +179,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     // Save the updated session
     await session.save();
-    logger.info("Session updated successfully: ", { sessionId });
+    logger.info("Session updated successfully:", { sessionId });
 
     // Return the response
     res.json({
@@ -210,11 +208,7 @@ export const getSessionHistory = async (req: Request, res: Response) => {
     const { sessionId } = req.params;
     const userId = new Types.ObjectId(req.user.id);
 
-    const session = (await ChatSession.findOne({
-      sessionId,
-      userId,
-    }).exec()) as IChatSession | null;
-
+    const session = (await ChatSession.findById(sessionId).exec()) as IChatSession;
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
@@ -238,14 +232,11 @@ export const getChatSession = async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
     logger.info(`Getting chat session: ${sessionId}`);
-
     const chatSession = await ChatSession.findOne({ sessionId });
-
     if (!chatSession) {
       logger.warn(`Chat session not found: ${sessionId}`);
       return res.status(404).json({ error: "Chat session not found" });
     }
-
     logger.info(`Found chat session: ${sessionId}`);
     res.json(chatSession);
   } catch (error) {

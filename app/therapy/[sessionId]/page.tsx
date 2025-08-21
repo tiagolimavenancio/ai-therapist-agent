@@ -1,22 +1,72 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Badge, Bot, Loader2, MessageSquare, PlusCircle, Send, Sparkles, User } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
-import ReactMarkdown from "react-markdown";
-import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  ChatMessage,
-  ChatSession,
+  Send,
+  Bot,
+  User,
+  Loader2,
+  Sparkles,
+  X,
+  Trophy,
+  Star,
+  Clock,
+  Smile,
+  PlusCircle,
+  MessageSquare,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BreathingGame } from "@/components/games/breathing-game";
+import { ZenGarden } from "@/components/games/zen-garden";
+import { ForestGame } from "@/components/games/forest-game";
+import { OceanWaves } from "@/components/games/ocean-waves";
+import { Badge } from "@/components/ui/badge";
+import {
   createChatSession,
-  getAllChatSessions,
-  getChatHistory,
   sendChatMessage,
+  getChatHistory,
+  ChatMessage,
+  getAllChatSessions,
+  ChatSession,
 } from "@/lib/api/chat";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
+import { Separator } from "@/components/ui/separator";
+
+interface SuggestedQuestion {
+  id: string;
+  text: string;
+}
+
+interface StressPrompt {
+  trigger: string;
+  activity: {
+    type: "breathing" | "garden" | "forest" | "waves";
+    title: string;
+    description: string;
+  };
+}
+
+interface ApiResponse {
+  message: string;
+  metadata: {
+    technique: string;
+    goal: string;
+    progress: any[];
+  };
+}
+
+const SUGGESTED_QUESTIONS = [
+  { text: "How can I manage my anxiety better?" },
+  { text: "I've been feeling overwhelmed lately" },
+  { text: "Can we talk about improving sleep?" },
+  { text: "I need help with work-life balance" },
+];
 
 const glowAnimation = {
   initial: { opacity: 0.5, scale: 1 },
@@ -31,18 +81,22 @@ const glowAnimation = {
   },
 };
 
+const COMPLETION_THRESHOLD = 5;
+
 export default function TherapyPage() {
   const params = useParams();
   const router = useRouter();
-
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [mounted, setMounted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChatPaused, setIsChatPaused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stressPrompt, setStressPrompt] = useState<StressPrompt | null>(null);
+  const [showActivity, setShowActivity] = useState(false);
+  const [isChatPaused, setIsChatPaused] = useState(false);
+  const [showNFTCelebration, setShowNFTCelebration] = useState(false);
+  const [isCompletingSession, setIsCompletingSession] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(params.sessionId as string);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
 
@@ -85,22 +139,18 @@ export default function TherapyPage() {
           console.log("Creating new chat session...");
           const newSessionId = await createChatSession();
           console.log("New session created:", newSessionId);
-
           setSessionId(newSessionId);
           window.history.pushState({}, "", `/therapy/${newSessionId}`);
         } else {
           console.log("Loading existing chat session:", sessionId);
-
           try {
             const history = await getChatHistory(sessionId);
             console.log("Loaded chat history:", history);
-
             if (Array.isArray(history)) {
               const formattedHistory = history.map((msg) => ({
                 ...msg,
                 timestamp: new Date(msg.timestamp),
               }));
-
               console.log("Formatted history:", formattedHistory);
               setMessages(formattedHistory);
             } else {
@@ -161,7 +211,6 @@ export default function TherapyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted");
-
     const currentMessage = message.trim();
     console.log("Current message:", currentMessage);
     console.log("Session ID:", sessionId);
@@ -188,8 +237,15 @@ export default function TherapyPage() {
         content: currentMessage,
         timestamp: new Date(),
       };
-
       setMessages((prev) => [...prev, userMessage]);
+
+      // Check for stress signals
+      const stressCheck = detectStressSignals(currentMessage);
+      if (stressCheck) {
+        setStressPrompt(stressCheck);
+        setIsTyping(false);
+        return;
+      }
 
       console.log("Sending message to API...");
       // Send message to API
@@ -258,19 +314,93 @@ export default function TherapyPage() {
     );
   }
 
+  const detectStressSignals = (message: string): StressPrompt | null => {
+    const stressKeywords = [
+      "stress",
+      "anxiety",
+      "worried",
+      "panic",
+      "overwhelmed",
+      "nervous",
+      "tense",
+      "pressure",
+      "can't cope",
+      "exhausted",
+    ];
+
+    const lowercaseMsg = message.toLowerCase();
+    const foundKeyword = stressKeywords.find((keyword) => lowercaseMsg.includes(keyword));
+
+    if (foundKeyword) {
+      const activities = [
+        {
+          type: "breathing" as const,
+          title: "Breathing Exercise",
+          description: "Follow calming breathing exercises with visual guidance",
+        },
+        {
+          type: "garden" as const,
+          title: "Zen Garden",
+          description: "Create and maintain your digital peaceful space",
+        },
+        {
+          type: "forest" as const,
+          title: "Mindful Forest",
+          description: "Take a peaceful walk through a virtual forest",
+        },
+        {
+          type: "waves" as const,
+          title: "Ocean Waves",
+          description: "Match your breath with gentle ocean waves",
+        },
+      ];
+
+      return {
+        trigger: foundKeyword,
+        activity: activities[Math.floor(Math.random() * activities.length)],
+      };
+    }
+
+    return null;
+  };
+
+  const handleSuggestedQuestion = async (text: string) => {
+    if (!sessionId) {
+      const newSessionId = await createChatSession();
+      setSessionId(newSessionId);
+      router.push(`/therapy/${newSessionId}`);
+    }
+
+    setMessage(text);
+    setTimeout(() => {
+      const event = new Event("submit") as unknown as React.FormEvent;
+      handleSubmit(event);
+    }, 0);
+  };
+
+  const handleCompleteSession = async () => {
+    if (isCompletingSession) return;
+    setIsCompletingSession(true);
+    try {
+      setShowNFTCelebration(true);
+    } catch (error) {
+      console.error("Error completing session:", error);
+    } finally {
+      setIsCompletingSession(false);
+    }
+  };
+
   const handleSessionSelect = async (selectedSessionId: string) => {
     if (selectedSessionId === sessionId) return;
 
     try {
       setIsLoading(true);
       const history = await getChatHistory(selectedSessionId);
-
       if (Array.isArray(history)) {
         const formattedHistory = history.map((msg) => ({
           ...msg,
           timestamp: new Date(msg.timestamp),
         }));
-
         setMessages(formattedHistory);
         setSessionId(selectedSessionId);
         window.history.pushState({}, "", `/therapy/${selectedSessionId}`);
@@ -349,11 +479,9 @@ export default function TherapyPage() {
                       {(() => {
                         try {
                           const date = new Date(session.updatedAt);
-
                           if (isNaN(date.getTime())) {
                             return "Just now";
                           }
-
                           return formatDistanceToNow(date, {
                             addSuffix: true,
                           });
@@ -385,7 +513,7 @@ export default function TherapyPage() {
           </div>
 
           {messages.length === 0 ? (
-            // Welcome screen with suggested questions A
+            // Welcome screen with suggested questions
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="max-w-2xl w-full space-y-8">
                 <div className="text-center space-y-4">
@@ -414,6 +542,31 @@ export default function TherapyPage() {
                     </div>
                     <p className="text-muted-foreground mt-2">How can I assist you today?</p>
                   </div>
+                </div>
+
+                <div className="grid gap-3 relative">
+                  <motion.div
+                    className="absolute -inset-4 bg-gradient-to-b from-primary/5 to-transparent blur-xl"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                  />
+                  {SUGGESTED_QUESTIONS.map((q, index) => (
+                    <motion.div
+                      key={q.text}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 + 0.5 }}
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full h-auto py-4 px-6 text-left justify-start hover:bg-muted/50 hover:border-primary/50 transition-all duration-300"
+                        onClick={() => handleSuggestedQuestion(q.text)}
+                      >
+                        {q.text}
+                      </Button>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -492,7 +645,7 @@ export default function TherapyPage() {
             </div>
           )}
 
-          {/** Input Area */}
+          {/* Input area */}
           <div className="border-t bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/50 p-4">
             <form
               onSubmit={handleSubmit}

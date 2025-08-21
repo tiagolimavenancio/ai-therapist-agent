@@ -1,6 +1,5 @@
-import mongoose, { Schema, Types } from "mongoose";
+import { Document, Schema, model, Types } from "mongoose";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface IChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -24,7 +23,7 @@ export interface IChatSession extends Document {
   messages: IChatMessage[];
 }
 
-const chatMessageSession = new Schema<IChatMessage>({
+const chatMessageSchema = new Schema<IChatMessage>({
   role: { type: String, required: true, enum: ["user", "assistant"] },
   content: { type: String, required: true },
   timestamp: { type: Date, required: true },
@@ -42,8 +41,15 @@ const chatSessionSchema = new Schema<IChatSession>({
   sessionId: { type: String, required: true, unique: true },
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   startTime: { type: Date, required: true },
-  status: { type: String, required: true, enum: ["active", "completed", "archived"] },
-  messages: [chatMessageSession],
+  status: {
+    type: String,
+    required: true,
+    enum: ["active", "completed", "archived"],
+  },
+  messages: [chatMessageSchema],
 });
 
-export const ChatSession = mongoose.model<IChatSession>("ChatSession", chatSessionSchema);
+export const ChatSession = model<IChatSession>(
+  "ChatSession",
+  chatSessionSchema
+);

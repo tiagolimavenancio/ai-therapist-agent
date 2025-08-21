@@ -1,20 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Heart, Menu, X, MessageCircle, AudioWaveform, LogOut, LogIn } from "lucide-react";
+import {
+  Heart,
+  Menu,
+  X,
+  MessageCircle,
+  AudioWaveform,
+  LogOut,
+  LogIn,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton } from "@/components/auth/sign-in-button";
-import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/contexts/session-context";
 
-function Header() {
-  const { isAuthenticated, user, logout } = useSession();
+export function Header() {
+  const { isAuthenticated, logout, user } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  console.log("Header: Auth state:", { isAuthenticated, user });
   const navItems = [
     { href: "/features", label: "Features" },
-    { href: "/about", label: "About" },
+    { href: "/about", label: "About Aura" },
   ];
 
   return (
@@ -37,7 +46,6 @@ function Header() {
             </div>
           </Link>
 
-          {/* Nav Items */}
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center space-x-1">
               {navItems.map((item) => (
@@ -57,16 +65,19 @@ function Header() {
 
               {isAuthenticated ? (
                 <>
-                  <Button asChild className="hidden md:flex gap-2 bg-primary/90 hover:bg-primary">
+                  <Button
+                    asChild
+                    className="hidden md:flex gap-2 bg-primary/90 hover:bg-primary"
+                  >
                     <Link href="/dashboard">
                       <MessageCircle className="w-4 h-4 mr-1" />
                       Start Chat
                     </Link>
                   </Button>
                   <Button
-                    className="text-muted-foreground hover:text-foreground transition-colors"
                     variant="outline"
                     onClick={logout}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign out
@@ -82,13 +93,17 @@ function Header() {
                 className="md:hidden"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
-                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {isMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-primary/10">
             <nav className="flex flex-col space-y-1 py-4">
@@ -102,18 +117,23 @@ function Header() {
                   {item.label}
                 </Link>
               ))}
-              <Button asChild className="mt-2 mx-4 gap-2 bg-primary/90 hover:bg-primary">
-                <Link href="/chat">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Start Chat</span>
-                </Link>
-              </Button>
+              {isAuthenticated && (
+                <Button
+                  asChild
+                  className="mt-2 mx-4 gap-2 bg-primary/90 hover:bg-primary"
+                >
+                  <Link href="/dashboard">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Start Chat</span>
+                  </Link>
+                </Button>
+              )}
             </nav>
           </div>
         )}
       </header>
+
+      {/* <LoginModal /> */}
     </div>
   );
 }
-
-export default Header;

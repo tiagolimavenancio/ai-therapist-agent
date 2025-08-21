@@ -5,7 +5,7 @@ export interface IActivity extends Document {
   type: string;
   name: string;
   description?: string;
-  duration?: string;
+  duration?: number;
   timestamp: Date;
 }
 
@@ -20,7 +20,14 @@ const activitySchema = new Schema<IActivity>(
     type: {
       type: String,
       required: true,
-      enum: ["meditation", "exercise", "walking", "reading", "journaling", "therapy"],
+      enum: [
+        "meditation",
+        "exercise",
+        "walking",
+        "reading",
+        "journaling",
+        "therapy",
+      ],
     },
     name: {
       type: String,

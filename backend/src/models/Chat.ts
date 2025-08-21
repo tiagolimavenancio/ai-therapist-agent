@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IChatMessage {
   role: "user" | "assistant";
@@ -55,4 +53,7 @@ const chatSessionSchema = new Schema<IChatSession>(
   }
 );
 
-export const ChatSession = mongoose.model<IChatSession>("ChatSession", chatSessionSchema);
+export const ChatSession = mongoose.model<IChatSession>(
+  "ChatSession",
+  chatSessionSchema
+);

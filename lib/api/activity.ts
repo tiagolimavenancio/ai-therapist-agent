@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ActivityEntry {
   type: string;
   name: string;
@@ -6,7 +5,9 @@ interface ActivityEntry {
   duration?: number;
 }
 
-export async function logActivity(data: ActivityEntry): Promise<{ success: boolean; data: any }> {
+export async function logActivity(
+  data: ActivityEntry
+): Promise<{ success: boolean; data: any }> {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Not authenticated");
 

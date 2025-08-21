@@ -1,37 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Header from "@/components/header";
-import { Providers } from "@/components/providers";
+import { Inter } from "next/font/google";
+
 import "./globals.css";
 import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { Toaster } from "@/components/ui/toaster";
+import { Providers } from "@/components/providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Initialize the fonts
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "AI Therapy Agent ",
+  title: "AI Therapy Agent",
   description: "Your personal AI therapy companion",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <Providers>
           <Header />
-          {children}
+          <main>{children}</main>
           <Footer />
+          <Toaster />
         </Providers>
       </body>
     </html>

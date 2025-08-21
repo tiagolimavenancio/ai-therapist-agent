@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Pause, TreePine, Volume2, VolumeX, Play } from "lucide-react";
+import { TreePine, Volume2, VolumeX, Play, Pause } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 
 const MEDITATION_DURATION = 5 * 60; // 5 minutes in seconds
 
@@ -14,7 +14,6 @@ export function ForestGame() {
   const [volume, setVolume] = useState(50);
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(MEDITATION_DURATION);
-
   const [audioElements] = useState({
     birds: new Audio("/sounds/birds.mp3"),
     wind: new Audio("/sounds/wind.mp3"),
@@ -43,7 +42,6 @@ export function ForestGame() {
     });
   }, [volume]);
 
-  // Calculates the remaining time as a percentage of the progress bar.
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -51,14 +49,16 @@ export function ForestGame() {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           const newTime = prev - 1;
-          setProgress(((MEDITATION_DURATION - newTime) / MEDITATION_DURATION) * 100);
+          setProgress(
+            ((MEDITATION_DURATION - newTime) / MEDITATION_DURATION) * 100
+          );
           return newTime;
         });
       }, 1000);
     }
 
     return () => clearInterval(timer);
-  }, [timeLeft, isPlaying]);
+  }, [isPlaying, timeLeft]);
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -66,7 +66,6 @@ export function ForestGame() {
     } else {
       Object.values(audioElements).forEach((audio) => audio.play());
     }
-
     setIsPlaying(!isPlaying);
   };
 
@@ -105,7 +104,11 @@ export function ForestGame() {
             <span>{volume}%</span>
           </div>
           <div className="flex items-center gap-2">
-            {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {volume === 0 ? (
+              <VolumeX className="w-4 h-4" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
             <Slider
               value={[volume]}
               onValueChange={(value) => setVolume(value[0])}
@@ -118,11 +121,24 @@ export function ForestGame() {
         <Progress value={progress} className="h-2" />
 
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{formatTime(timeLeft)}</span>
-          <Button variant="outline" size="icon" onClick={togglePlay} className="rounded-full">
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          <span className="text-sm text-muted-foreground">
+            {formatTime(timeLeft)}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={togglePlay}
+            className="rounded-full"
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
           </Button>
-          <span className="text-sm text-muted-foreground">{formatTime(MEDITATION_DURATION)}</span>
+          <span className="text-sm text-muted-foreground">
+            {formatTime(MEDITATION_DURATION)}
+          </span>
         </div>
       </div>
     </div>

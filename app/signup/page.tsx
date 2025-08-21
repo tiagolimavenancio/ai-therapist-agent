@@ -1,42 +1,37 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Lock, Mail, User } from "lucide-react";
-import { Container } from "@/components/ui/container";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Container } from "@/components/ui/container";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { Mail, User, Lock } from "lucide-react";
 import { registerUser } from "@/lib/api/auth";
 
-export default function SignUpPage() {
+export default function SignupPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const router = useRouter();
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
     setLoading(true);
     try {
       await registerUser(name, email, password);
       router.push("/login");
     } catch (err: any) {
-      setError(err.message || "Sign up failed. Please try again.");
+      setError(err.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +53,10 @@ export default function SignUpPage() {
             <div className="space-y-3">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
-                  <label htmlFor="name" className="block text-base font-semibold mb-1">
+                  <label
+                    htmlFor="name"
+                    className="block text-base font-semibold mb-1"
+                  >
                     Name
                   </label>
                   <div className="relative">
@@ -75,7 +73,10 @@ export default function SignUpPage() {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <label htmlFor="email" className="block text-base font-semibold mb-1">
+                  <label
+                    htmlFor="email"
+                    className="block text-base font-semibold mb-1"
+                  >
                     Email
                   </label>
                   <div className="relative">
@@ -93,7 +94,10 @@ export default function SignUpPage() {
                 </div>
               </div>
               <div>
-                <label htmlFor="password" className="block text-base font-semibold mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-base font-semibold mb-1"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -110,7 +114,10 @@ export default function SignUpPage() {
                 </div>
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-base font-semibold mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-base font-semibold mb-1"
+                >
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -127,7 +134,11 @@ export default function SignUpPage() {
                 </div>
               </div>
             </div>
-            {error && <p className="text-red-500 text-base text-center font-medium">{error}</p>}
+            {error && (
+              <p className="text-red-500 text-base text-center font-medium">
+                {error}
+              </p>
+            )}
             <Button
               className="w-full py-2 text-base rounded-xl font-bold bg-gradient-to-r from-primary to-primary/80 shadow-md hover:from-primary/80 hover:to-primary"
               size="lg"

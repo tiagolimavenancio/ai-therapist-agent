@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { Flower2 } from "lucide-react";
 
 const items = [
-  { type: "worm", icon: "🐛" },
+  { type: "rock", icon: "🪨" },
   { type: "flower", icon: "🌸" },
   { type: "tree", icon: "🌲" },
   { type: "bamboo", icon: "🎋" },
@@ -19,7 +20,6 @@ export function ZenGarden() {
       y: number;
     }>
   >([]);
-
   const [selectedItem, setSelectedItem] = useState(items[0]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -46,7 +45,6 @@ const API_BASE = process.env.BACKEND_API_URL || "http://localhost:3001";
 // Helper function to get auth headers
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
-
   return {
     "Content-Type": "application/json",
     Authorization: token ? `Bearer ${token}` : "",
@@ -56,7 +54,6 @@ const getAuthHeaders = () => {
 export const createChatSession = async (): Promise<string> => {
   try {
     console.log("Creating new chat session...");
-
     const response = await fetch(`${API_BASE}/chat/sessions`, {
       method: "POST",
       headers: getAuthHeaders(),

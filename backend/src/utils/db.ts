@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import { logger } from "./logger";
 
-dotenv.config();
-const MONGODB_URI = process.env.MONGODB_URI || "";
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://blocklinklabs:rKjw3YwImNAzgMzU@cluster0.znbgmwt.mongodb.net/ai-therapy";
 
 export const connectDB = async () => {
   try {

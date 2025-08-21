@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error("Failed to create chat session: ", error);
+      console.error("Failed to create chat session:", error);
       return NextResponse.json(
         { error: error.error || "Failed to create chat session" },
         { status: response.status }
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("Chat session created: ", data);
+    console.log("Chat session created:", data);
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error creating chat session:", error);

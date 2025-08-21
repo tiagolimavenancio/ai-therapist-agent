@@ -1,15 +1,19 @@
-import { GoogleGenAI } from "@google/genai";
-import { logger } from "../utils/logger";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import dotenv from "dotenv";
 import { inngest } from "./client";
+import { logger } from "../utils/logger";
+
+// Load environment variables
+dotenv.config();
 
 // Initialize Gemini
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Function to handle chat message processing
 export const processChatMessage = inngest.createFunction(
-  { id: "process-chat-message" },
+  {
+    id: "process-chat-message",
+  },
   { event: "therapy/session.message" },
   async ({ event, step }) => {
     try {
@@ -31,7 +35,7 @@ export const processChatMessage = inngest.createFunction(
         systemPrompt,
       } = event.data;
 
-      logger.info("Processing chat message: ", {
+      logger.info("Processing chat message:", {
         message,
         historyLength: history?.length,
       });
@@ -39,6 +43,8 @@ export const processChatMessage = inngest.createFunction(
       // Analyze the message using Gemini
       const analysis = await step.run("analyze-message", async () => {
         try {
+          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
           const prompt = `Analyze this therapy message and provide insights. Return ONLY a valid JSON object with no markdown formatting or additional text.
           Message: ${message}
           Context: ${JSON.stringify({ memory, goals })}
@@ -52,19 +58,17 @@ export const processChatMessage = inngest.createFunction(
             "progressIndicators": ["string"]
           }`;
 
-          const response = await genAI.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: prompt,
-          });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text().trim();
 
-          const text = response.text || "{}";
-          logger.info("Received analysis from Gemini: ", { text });
+          logger.info("Received analysis from Gemini:", { text });
 
-          // Clean the response text to ensure it´s valid JSON
+          // Clean the response text to ensure it's valid JSON
           const cleanText = text.replace(/```json\n|\n```/g, "").trim();
           const parsedAnalysis = JSON.parse(cleanText);
 
-          logger.info("Successfully parsed analysis: ", parsedAnalysis);
+          logger.info("Successfully parsed analysis:", parsedAnalysis);
           return parsedAnalysis;
         } catch (error) {
           logger.error("Error in message analysis:", { error, message });
@@ -84,15 +88,12 @@ export const processChatMessage = inngest.createFunction(
         if (analysis.emotionalState) {
           memory.userProfile.emotionalState.push(analysis.emotionalState);
         }
-
         if (analysis.themes) {
           memory.sessionContext.conversationThemes.push(...analysis.themes);
         }
-
         if (analysis.riskLevel) {
           memory.userProfile.riskLevel = analysis.riskLevel;
         }
-
         return memory;
       });
 
@@ -109,6 +110,8 @@ export const processChatMessage = inngest.createFunction(
       // Generate therapeutic response
       const response = await step.run("generate-response", async () => {
         try {
+          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
           const prompt = `${systemPrompt}
           
           Based on the following context, generate a therapeutic response:
@@ -124,16 +127,10 @@ export const processChatMessage = inngest.createFunction(
           4. Maintains professional boundaries
           5. Considers safety and well-being`;
 
-          const response = await genAI.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: prompt,
-          });
+          const result = await model.generateContent(prompt);
+          const responseText = result.response.text().trim();
 
-          const results = response.text;
-          const responseText = results?.trim();
-
-          logger.info("Generated response: ", { responseText });
-
+          logger.info("Generated response:", { responseText });
           return responseText;
         } catch (error) {
           logger.error("Error generating response:", { error, message });
@@ -153,7 +150,6 @@ export const processChatMessage = inngest.createFunction(
         error,
         message: event.data.message,
       });
-
       // Return a default response instead of throwing
       return {
         response: "I'm here to support you. Could you tell me more about what's on your mind?",
@@ -183,6 +179,8 @@ export const analyzeTherapySession = inngest.createFunction(
 
       // Analyze the session using Gemini
       const analysis = await step.run("analyze-with-gemini", async () => {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
         const prompt = `Analyze this therapy session and provide insights:
         Session Content: ${sessionContent}
         
@@ -195,19 +193,16 @@ export const analyzeTherapySession = inngest.createFunction(
         
         Format the response as a JSON object.`;
 
-        const response = await genAI.models.generateContent({
-          model: "gemini-2.0-flash",
-          contents: prompt,
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-        const results = response.text;
-        const responseText = results?.trim();
-
-        return JSON.parse(responseText || "{}");
+        return JSON.parse(text);
       });
 
       // Store the analysis
       await step.run("store-analysis", async () => {
+        // Here you would typically store the analysis in your database
         logger.info("Session analysis stored successfully");
         return analysis;
       });
@@ -219,7 +214,6 @@ export const analyzeTherapySession = inngest.createFunction(
             sessionId: event.data.sessionId,
             concerns: analysis.areasOfConcern,
           });
-
           // Add your alert logic here
         });
       }
@@ -239,7 +233,57 @@ export const analyzeTherapySession = inngest.createFunction(
 export const generateActivityRecommendations = inngest.createFunction(
   { id: "generate-activity-recommendations" },
   { event: "mood/updated" },
-  async ({ event, step }) => {}
+  async ({ event, step }) => {
+    try {
+      // Get user's mood history and activity history
+      const userContext = await step.run("get-user-context", async () => {
+        // Here you would typically fetch user's history from your database
+        return {
+          recentMoods: event.data.recentMoods,
+          completedActivities: event.data.completedActivities,
+          preferences: event.data.preferences,
+        };
+      });
+
+      // Generate recommendations using Gemini
+      const recommendations = await step.run("generate-recommendations", async () => {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        const prompt = `Based on the following user context, generate personalized activity recommendations:
+        User Context: ${JSON.stringify(userContext)}
+        
+        Please provide:
+        1. 3-5 personalized activity recommendations
+        2. Reasoning for each recommendation
+        3. Expected benefits
+        4. Difficulty level
+        5. Estimated duration
+        
+        Format the response as a JSON object.`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        return JSON.parse(text);
+      });
+
+      // Store the recommendations
+      await step.run("store-recommendations", async () => {
+        // Here you would typically store the recommendations in your database
+        logger.info("Activity recommendations stored successfully");
+        return recommendations;
+      });
+
+      return {
+        message: "Activity recommendations generated",
+        recommendations,
+      };
+    } catch (error) {
+      logger.error("Error generating activity recommendations:", error);
+      throw error;
+    }
+  }
 );
 
 // Add the functions to the exported array

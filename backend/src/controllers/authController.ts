@@ -1,32 +1,29 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { User } from "../models/User";
 import { Session } from "../models/Session";
 
-// Register a new user
+// Load environment variables
+dotenv.config();
+
 export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
-
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Please, fill in all required fields." });
+      return res.status(400).json({ message: "Name, email, and password are required." });
     }
-
-    const isExistingUser = await User.findOne({ email });
-
     // Check if user exists
-    if (isExistingUser) {
-      return res.status(400).json({ message: "User already exists." });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already in use." });
     }
-
-    // Hashed password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
     // Create user
     const user = new User({ name, email, password: hashedPassword });
     await user.save();
-
     // Respond
     res.status(201).json({
       user: {
@@ -37,8 +34,7 @@ export const register = async (req: Request, res: Response) => {
       message: "User registered successfully.",
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Something went wrong." });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
@@ -46,24 +42,24 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // validate input
+    // Validate input
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res.status(400).json({ message: "Email and password are required." });
     }
 
-    // find user
+    // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    // Generate JWT Token
+    // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "your-secret-key", {
       expiresIn: "24h",
     });
@@ -81,7 +77,7 @@ export const login = async (req: Request, res: Response) => {
     await session.save();
 
     // Respond with user data and token
-    res.status(201).json({
+    res.json({
       user: {
         _id: user._id,
         name: user.name,
@@ -91,7 +87,7 @@ export const login = async (req: Request, res: Response) => {
       message: "Login successful",
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error ", error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 

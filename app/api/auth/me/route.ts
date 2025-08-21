@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
-
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ message: "Server error", error }, { status: 500 });

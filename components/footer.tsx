@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { Wrench } from "lucide-react";
+
 export function Footer() {
   return (
     <footer className="border-t py-6">

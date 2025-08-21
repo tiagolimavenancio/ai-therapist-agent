@@ -1,4 +1,8 @@
 import winston from "winston";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const logger = winston.createLogger({
   level: "info",

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Check, Wind } from "lucide-react";
+import { Wind, Check } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 
 const TOTAL_ROUNDS = 5;
 
@@ -27,7 +27,6 @@ export function BreathingGame() {
             setPhase("hold");
             return 0;
           }
-
           return p + 2;
         });
       }, 100);
@@ -38,7 +37,6 @@ export function BreathingGame() {
             setPhase("exhale");
             return 0;
           }
-
           return p + 4;
         });
       }, 100);
@@ -50,20 +48,17 @@ export function BreathingGame() {
               setIsComplete(true);
               return p;
             }
-
             setPhase("inhale");
             setRound((r) => r + 1);
-
             return 0;
           }
-
           return p + 2;
         });
       }, 100);
     }
 
     return () => clearInterval(timer);
-  }, [isComplete, isPaused, phase, round]);
+  }, [phase, round, isComplete, isPaused]);
 
   const handleReset = () => {
     setPhase("inhale");
@@ -85,7 +80,8 @@ export function BreathingGame() {
         </motion.div>
         <h3 className="text-2xl font-semibold">Great job!</h3>
         <p className="text-muted-foreground text-center max-w-sm">
-          You've completed {TOTAL_ROUNDS} rounds of breathing exercises. How do you feel?
+          You've completed {TOTAL_ROUNDS} rounds of breathing exercises. How do
+          you feel?
         </p>
         <Button onClick={handleReset} className="mt-4">
           Start Again
@@ -117,7 +113,11 @@ export function BreathingGame() {
             </div>
           </div>
           <h3 className="text-2xl font-semibold">
-            {phase === "inhale" ? "Breathe In" : phase === "hold" ? "Hold" : "Breathe Out"}
+            {phase === "inhale"
+              ? "Breathe In"
+              : phase === "hold"
+              ? "Hold"
+              : "Breathe Out"}
           </h3>
         </motion.div>
       </AnimatePresence>
@@ -130,7 +130,11 @@ export function BreathingGame() {
         <div className="text-sm text-muted-foreground">
           Round {round} of {TOTAL_ROUNDS}
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setIsPaused(!isPaused)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsPaused(!isPaused)}
+        >
           {isPaused ? "Resume" : "Pause"}
         </Button>
       </div>

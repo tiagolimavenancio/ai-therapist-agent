@@ -1,12 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Ripple } from "@/components/magicui/ripple";
-import { ArrowRight, HeartPulse, Lightbulb, Lock, MessageSquareHeart, Waves } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import {
+  Brain,
+  Heart,
+  Shield,
+  MessageCircle,
+  Sparkles,
+  LineChart,
+  Waves,
+  Check,
+  ArrowRight,
+  HeartPulse,
+  Lightbulb,
+  Lock,
+  MessageSquareHeart,
+} from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { Slider } from "@/components/ui/slider";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import React from "react";
+import { Ripple } from "@/components/ui/ripple";
 
 export default function Home() {
   const emotions = [
@@ -19,8 +42,36 @@ export default function Home() {
 
   const [emotion, setEmotion] = useState(50);
   const [mounted, setMounted] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
-  const currentEmotion = emotions.find((em) => Math.abs(emotion - em.value) < 15) || emotions[2];
+  const welcomeSteps = [
+    {
+      title: "Hi, I'm Aura 👋",
+      description:
+        "Your AI companion for emotional well-being. I'm here to provide a safe, judgment-free space for you to express yourself.",
+      icon: Waves,
+    },
+    {
+      title: "Personalized Support 🌱",
+      description:
+        "I adapt to your needs and emotional state, offering evidence-based techniques and gentle guidance when you need it most.",
+      icon: Brain,
+    },
+    {
+      title: "Your Privacy Matters 🛡️",
+      description:
+        "Our conversations are completely private and secure. I follow strict ethical guidelines and respect your boundaries.",
+      icon: Shield,
+    },
+  ];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentEmotion =
+    emotions.find((em) => Math.abs(emotion - em.value) < 15) || emotions[2];
 
   const features = [
     {
@@ -52,14 +103,6 @@ export default function Home() {
       delay: 0.8,
     },
   ];
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <div className="flex flex-col min-h-screen overflow-hidden">
@@ -103,8 +146,8 @@ export default function Home() {
 
           {/* Enhanced description with better readability */}
           <p className="max-w-[600px] mx-auto text-base md:text-lg text-muted-foreground leading-relaxed tracking-wide">
-            Experience a new way of emotional support. Our AI companion is here to listen,
-            understand, and guide you through life´s journey.
+            Experience a new way of emotional support. Our AI companion is here
+            to listen, understand, and guide you through life's journey.
           </p>
 
           {/* Emotion slider section with enhanced transitions */}
@@ -129,7 +172,9 @@ export default function Home() {
                     }`}
                     onClick={() => setEmotion(em.value)}
                   >
-                    <div className="text-2xl transform-gpu">{em.label.split(" ")[0]}</div>
+                    <div className="text-2xl transform-gpu">
+                      {em.label.split(" ")[0]}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-1 font-medium">
                       {em.label.split(" ")[1]}
                     </div>
@@ -144,12 +189,12 @@ export default function Home() {
                 className={`absolute inset-0 bg-gradient-to-r ${currentEmotion.color} to-transparent blur-2xl -z-10 transition-all duration-500`}
               />
               <Slider
-                className="py-4"
                 value={[emotion]}
                 onValueChange={(value) => setEmotion(value[0])}
                 min={0}
                 max={100}
                 step={1}
+                className="py-4"
               />
             </div>
 
@@ -169,6 +214,7 @@ export default function Home() {
           >
             <Button
               size="lg"
+              onClick={() => setShowDialog(true)}
               className="relative group h-12 px-8 rounded-full bg-gradient-to-r from-primary via-primary/90 to-secondary hover:to-primary shadow-lg shadow-primary/20 transition-all duration-500 hover:shadow-xl hover:shadow-primary/30"
             >
               <span className="relative z-10 font-medium flex items-center gap-2">
@@ -203,7 +249,8 @@ export default function Home() {
               How Aura Helps You
             </h2>
             <p className="text-foreground dark:text-foreground/95 max-w-2xl mx-auto font-medium text-lg">
-              Experience a new kind of emotional support, powered by empathetic AI
+              Experience a new kind of emotional support, powered by empathetic
+              AI
             </p>
           </motion.div>
 
@@ -242,6 +289,77 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-card/80 backdrop-blur-lg">
+          <DialogHeader>
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4"
+            >
+              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                {welcomeSteps[currentStep] && (
+                  <div>
+                    {React.createElement(welcomeSteps[currentStep].icon, {
+                      className: "w-8 h-8 text-primary",
+                    })}
+                  </div>
+                )}
+              </div>
+              <DialogTitle className="text-2xl text-center">
+                {welcomeSteps[currentStep]?.title}
+              </DialogTitle>
+              <DialogDescription className="text-center text-base leading-relaxed">
+                {welcomeSteps[currentStep]?.description}
+              </DialogDescription>
+            </motion.div>
+          </DialogHeader>
+          <div className="flex justify-between items-center mt-8">
+            <div className="flex gap-2">
+              {welcomeSteps.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentStep ? "bg-primary w-4" : "bg-primary/20"
+                  }`}
+                />
+              ))}
+            </div>
+            <Button
+              onClick={() => {
+                if (currentStep < welcomeSteps.length - 1) {
+                  setCurrentStep((c) => c + 1);
+                } else {
+                  setShowDialog(false);
+                  setCurrentStep(0);
+                  // Here you would navigate to the chat interface
+                }
+              }}
+              className="relative group px-6"
+            >
+              <span className="flex items-center gap-2">
+                {currentStep === welcomeSteps.length - 1 ? (
+                  <>
+                    Let's Begin
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                  </>
+                )}
+              </span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add custom animations to globals.css */}
     </div>
   );
 }

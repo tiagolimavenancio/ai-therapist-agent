@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_API_URL = process.env.BACKEND_API_URL || "http://localhost:3001";
@@ -17,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
 
     if (!response.ok) {
       const error = await response.json();
-      console.error("Failed to get chat history: ", error);
+      console.error("Failed to get chat history:", error);
       return NextResponse.json(
         { error: error.error || "Failed to get chat history" },
         { status: response.status }
@@ -25,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { sessionId: s
     }
 
     const data = await response.json();
-    console.log("Chat history retrieved successfully: ", data);
+    console.log("Chat history retrieved successfully:", data);
 
     // Format the response to match the frontend's expected format
     const formattedMessages = data.map((msg: any) => ({

@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "@/lib/contexts/session-context";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 
 interface MoodFormProps {
   onSuccess?: () => void;
@@ -15,6 +15,7 @@ interface MoodFormProps {
 export function MoodForm({ onSuccess }: MoodFormProps) {
   const [moodScore, setMoodScore] = useState(50);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const { user, isAuthenticated, loading } = useSession();
   const router = useRouter();
 
@@ -26,7 +27,8 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
     { value: 100, label: "🤗", description: "Great" },
   ];
 
-  const currentEmotion = emotions.find((em) => Math.abs(moodScore - em.value) < 15) || emotions[2];
+  const currentEmotion =
+    emotions.find((em) => Math.abs(moodScore - em.value) < 15) || emotions[2];
 
   const handleSubmit = async () => {
     console.log("MoodForm: Starting submission");
@@ -34,7 +36,11 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
 
     if (!isAuthenticated) {
       console.log("MoodForm: User not authenticated");
-      alert("Authentication required");
+      toast({
+        title: "Authentication required",
+        description: "Please log in to track your mood",
+        variant: "destructive",
+      });
       router.push("/login");
       return;
     }
@@ -42,7 +48,10 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
     try {
       setIsLoading(true);
       const token = localStorage.getItem("token");
-      console.log("MoodForm: Token from localStorage:", token ? "exists" : "not found");
+      console.log(
+        "MoodForm: Token from localStorage:",
+        token ? "exists" : "not found"
+      );
 
       const response = await fetch("/api/mood", {
         method: "POST",
@@ -64,13 +73,21 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
       const data = await response.json();
       console.log("MoodForm: Success response:", data);
 
-      alert("Mood tracked successfully!");
+      toast({
+        title: "Mood tracked successfully!",
+        description: "Your mood has been recorded.",
+      });
 
       // Call onSuccess to close the modal
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error) {
       console.error("MoodForm: Error:", error);
-      alert(error.message || "Failed to track mood");
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to track mood",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +98,9 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
       {/* Emotion display */}
       <div className="text-center space-y-2">
         <div className="text-4xl">{currentEmotion.label}</div>
-        <div className="text-sm text-muted-foreground">{currentEmotion.description}</div>
+        <div className="text-sm text-muted-foreground">
+          {currentEmotion.description}
+        </div>
       </div>
 
       {/* Emotion slider */}
@@ -91,7 +110,9 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
             <div
               key={em.value}
               className={`cursor-pointer transition-opacity ${
-                Math.abs(moodScore - em.value) < 15 ? "opacity-100" : "opacity-50"
+                Math.abs(moodScore - em.value) < 15
+                  ? "opacity-100"
+                  : "opacity-50"
               }`}
               onClick={() => setMoodScore(em.value)}
             >
@@ -111,7 +132,11 @@ export function MoodForm({ onSuccess }: MoodFormProps) {
       </div>
 
       {/* Submit button */}
-      <Button className="w-full" onClick={handleSubmit} disabled={isLoading || loading}>
+      <Button
+        className="w-full"
+        onClick={handleSubmit}
+        disabled={isLoading || loading}
+      >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

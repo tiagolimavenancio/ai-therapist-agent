@@ -1,11 +1,17 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { Activity, IActivity } from "../models/Activity";
 import { logger } from "../utils/logger";
-import { Activity } from "../models/Activity";
+import { sendActivityCompletionEvent } from "../utils/inngestEvents";
 
 // Log a new activity
-export const logActivity = async (req: Request, res: Response, next: NextFunction) => {
+export const logActivity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const { type, name, description, duration, difficulty, feedback } = req.body;
+    const { type, name, description, duration, difficulty, feedback } =
+      req.body;
     const userId = req.user?._id;
 
     if (!userId) {
@@ -26,7 +32,22 @@ export const logActivity = async (req: Request, res: Response, next: NextFunctio
     await activity.save();
     logger.info(`Activity logged for user ${userId}`);
 
-    res.status(201).json({ success: true, data: activity });
+    // Send activity completion event to Inngest
+    await sendActivityCompletionEvent({
+      userId,
+      id: activity._id,
+      type,
+      name,
+      duration,
+      difficulty,
+      feedback,
+      timestamp: activity.timestamp,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: activity,
+    });
   } catch (error) {
     next(error);
   }

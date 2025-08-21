@@ -1,6 +1,6 @@
 import express from "express";
+import { auth } from "../middleware/auth";
 import { logActivity } from "../controllers/activityController";
-import { auth } from "../middlewares/auth";
 
 const router = express.Router();
 

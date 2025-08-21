@@ -4,8 +4,8 @@ import {
   getChatSession,
   sendMessage,
   getChatHistory,
-} from "../controllers/chatController";
-import { auth } from "../middlewares/auth";
+} from "../controllers/chat";
+import { auth } from "../middleware/auth";
 
 const router = express.Router();
 

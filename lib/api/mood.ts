@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface MoodEntry {
   score: number;
   note?: string;
@@ -17,7 +16,9 @@ interface MoodStats {
   }>;
 }
 
-export async function trackMood(data: MoodEntry): Promise<{ success: boolean; data: any }> {
+export async function trackMood(
+  data: MoodEntry
+): Promise<{ success: boolean; data: any }> {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Not authenticated");
 
@@ -47,7 +48,6 @@ export async function getMoodHistory(params?: {
   if (!token) throw new Error("Not authenticated");
 
   const queryParams = new URLSearchParams();
-
   if (params?.startDate) queryParams.append("startDate", params.startDate);
   if (params?.endDate) queryParams.append("endDate", params.endDate);
   if (params?.limit) queryParams.append("limit", params.limit.toString());
@@ -66,7 +66,9 @@ export async function getMoodHistory(params?: {
   return response.json();
 }
 
-export async function getMoodStats(period: "week" | "month" | "year" = "week"): Promise<{
+export async function getMoodStats(
+  period: "week" | "month" | "year" = "week"
+): Promise<{
   success: boolean;
   data: MoodStats;
 }> {
